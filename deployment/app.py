@@ -2,243 +2,140 @@ import streamlit as st
 import pandas as pd
 from huggingface_hub import hf_hub_download
 import joblib
+from flask import Flask, render_template, request
+import requests
+import pandas as pd
+import numpy as np
+from sklearn.preprocessing import StandardScaler
 
 # Download and load the model
 model_path = hf_hub_download(repo_id="vishaldixit75/tourismData", filename="best_tourism_model_v1.joblib")
 model = joblib.load(model_path)
 
-# Streamlit UI for Machine Failure Prediction
-st.title("Tourism Project App")
-st.write("""
-This robust predictive solution will empower policymakers to make data-driven decisions, enhance marketing strategies,
-and effectively target potential customers, thereby driving customer acquisition and business growth.
-Please enter the sensor and configuration data below to get a prediction.
-""")
 
-# Title and Description
-st.title("✈️ Wellness Tourism Package Prediction")
-st.markdown("""
-<style>
-    .main-header {
-        font-size: 20px;
-        color: #1f77b4;
-        margin-bottom: 20px;
-    }
-    .prediction-box {
-        padding: 20px;
-        border-radius: 10px;
-        margin: 20px 0;
-    }
-    .success-box {
-        background-color: #d4edda;
-        border: 1px solid #c3e6cb;
-    }
-    .warning-box {
-        background-color: #fff3cd;
-        border: 1px solid #ffeeba;
-    }
-</style>
-""", unsafe_allow_html=True)
+# Streamlit UI
+st.title("MLOPS – Customer Package Purchase Prediction App")
+st.write(
+    "This internal application predicts whether a customer is likely to "
+    "purchase a travel package based on demographic and interaction details."
+)
+st.write("Please enter the customer details below.")
 
-st.markdown("""
-This application predicts the likelihood of a customer purchasing the **Wellness Tourism Package**
-based on their profile and interaction data. Enter customer details below to get a prediction.
-""")
+# -----------------------------
+# Customer Details
+# -----------------------------
+Age = st.number_input("Age", min_value=18, max_value=100, value=30)
 
-# Create two columns for input
-col1, col2 = st.columns(2)
+TypeofContact = st.selectbox(
+    "Type of Contact",
+    ["Company Invited", "Self Inquiry"]
+)
 
-with col1:
-    st.subheader("📋 Customer Demographics")
+CityTier = st.selectbox("City Tier", [1, 2, 3])
 
-    age = st.number_input("Age", min_value=18, max_value=100, value=35, step=1)
+Occupation = st.selectbox(
+    "Occupation",
+    ["Salaried", "Freelancer", "Small Business", "Large Business"]
+)
 
-    type_of_contact = st.selectbox(
-        "Type of Contact",
-        options=["Self Enquiry", "Company Invited"]
-    )
+Gender = st.selectbox("Gender", ["Male", "Female"])
 
-    city_tier = st.selectbox(
-        "City Tier",
-        options=[1, 2, 3],
-        help="Tier 1: Metro cities, Tier 2: Mid-sized cities, Tier 3: Smaller cities"
-    )
+NumberOfPersonVisiting = st.number_input(
+    "Number of Persons Visiting",
+    min_value=1, max_value=10, value=2
+)
 
-    occupation = st.selectbox(
-        "Occupation",
-        options=["Salaried", "Small Business", "Free Lancer", "Large Business"]
-    )
+PreferredPropertyStar = st.selectbox(
+    "Preferred Property Star",
+    [1, 2, 3, 4, 5]
+)
 
-    gender = st.selectbox("Gender", options=["Male", "Female"])
+MaritalStatus = st.selectbox(
+    "Marital Status",
+    ["Single", "Married", "Divorced"]
+)
 
-    marital_status = st.selectbox(
-        "Marital Status",
-        options=["Single", "Married", "Divorced", "Unmarried"]
-    )
+NumberOfTrips = st.number_input(
+    "Number of Trips (per year)",
+    min_value=0, max_value=50, value=2
+)
 
-    designation = st.selectbox(
-        "Designation",
-        options=["Executive", "Manager", "Senior Manager", "AVP", "VP"]
-    )
+Passport = st.selectbox("Has Passport?", ["Yes", "No"])
+OwnCar = st.selectbox("Owns a Car?", ["Yes", "No"])
 
-    monthly_income = st.number_input(
-        "Monthly Income (₹)",
-        min_value=0.0,
-        max_value=200000.0,
-        value=25000.0,
-        step=1000.0
-    )
+NumberOfChildrenVisiting = st.number_input(
+    "Number of Children Visiting",
+    min_value=0, max_value=5, value=0
+)
 
-with col2:
-    st.subheader("🎯 Customer Interaction & Preferences")
+Designation = st.selectbox(
+    "Designation",
+    ["Executive", "Manager", "Senior Manager", "VP"]
+)
 
-    duration_of_pitch = st.number_input(
-        "Duration of Pitch (minutes)",
-        min_value=0.0,
-        max_value=60.0,
-        value=15.0,
-        step=0.5
-    )
+MonthlyIncome = st.number_input(
+    "Monthly Income",
+    min_value=5000, max_value=500000, value=50000
+)
 
-    number_of_persons_visiting = st.number_input(
-        "Number of Persons Visiting",
-        min_value=1,
-        max_value=10,
-        value=2,
-        step=1
-    )
+# -----------------------------
+# Interaction Details
+# -----------------------------
+PitchSatisfactionScore = st.slider(
+    "Pitch Satisfaction Score",
+    min_value=1, max_value=5, value=3
+)
 
-    number_of_followups = st.number_input(
-        "Number of Follow-ups",
-        min_value=0.0,
-        max_value=10.0,
-        value=3.0,
-        step=1.0
-    )
+ProductPitched = st.selectbox(
+    "Product Pitched",
+    ["Basic", "Standard", "Deluxe", "Super Deluxe"]
+)
 
-    product_pitched = st.selectbox(
-        "Product Pitched",
-        options=["Basic", "Standard", "Deluxe", "Super Deluxe", "King"]
-    )
+NumberOfFollowups = st.number_input(
+    "Number of Follow-ups",
+    min_value=0, max_value=20, value=2
+)
 
-    preferred_property_star = st.selectbox(
-        "Preferred Property Star Rating",
-        options=[3.0, 4.0, 5.0]
-    )
+DurationOfPitch = st.number_input(
+    "Duration of Pitch (minutes)",
+    min_value=1, max_value=120, value=15
+)
 
-    number_of_trips = st.number_input(
-        "Number of Trips (per year)",
-        min_value=0.0,
-        max_value=20.0,
-        value=3.0,
-        step=1.0
-    )
-
-    passport = st.selectbox("Has Passport?", options=["Yes", "No"])
-
-    pitch_satisfaction_score = st.slider(
-        "Pitch Satisfaction Score",
-        min_value=1,
-        max_value=5,
-        value=3,
-        step=1
-    )
-
-    own_car = st.selectbox("Owns Car?", options=["Yes", "No"])
-
-    number_of_children_visiting = st.number_input(
-        "Number of Children Visiting",
-        min_value=0.0,
-        max_value=5.0,
-        value=0.0,
-        step=1.0
-    )
-
-# Encoding mapping (based on LabelEncoder used during training)
-# Note: These mappings should match the exact encoding used during training
-type_of_contact_map = {"Company Invited": 0, "Self Enquiry": 1}
-occupation_map = {"Free Lancer": 0, "Large Business": 1, "Salaried": 2, "Small Business": 3}
-gender_map = {"Female": 0, "Male": 1}
-product_pitched_map = {"Basic": 0, "Deluxe": 1, "King": 2, "Standard": 3, "Super Deluxe": 4}
-marital_status_map = {"Divorced": 0, "Married": 1, "Single": 2, "Unmarried": 3}
-designation_map = {"AVP": 0, "Executive": 1, "Manager": 2, "Senior Manager": 3, "VP": 4}
-
-# Convert Yes/No to 0/1
-passport_val = 1 if passport == "Yes" else 0
-own_car_val = 1 if own_car == "Yes" else 0
-
+# -----------------------------
 # Prepare input data
+# -----------------------------
 input_data = pd.DataFrame([{
-    'Age': age,
-    'TypeofContact': type_of_contact_map[type_of_contact],
-    'CityTier': city_tier,
-    'DurationOfPitch': duration_of_pitch,
-    'Occupation': occupation_map[occupation],
-    'Gender': gender_map[gender],
-    'NumberOfPersonVisiting': number_of_persons_visiting,
-    'NumberOfFollowups': number_of_followups,
-    'ProductPitched': product_pitched_map[product_pitched],
-    'PreferredPropertyStar': preferred_property_star,
-    'MaritalStatus': marital_status_map[marital_status],
-    'NumberOfTrips': number_of_trips,
-    'Passport': passport_val,
-    'PitchSatisfactionScore': pitch_satisfaction_score,
-    'OwnCar': own_car_val,
-    'NumberOfChildrenVisiting': number_of_children_visiting,
-    'Designation': designation_map[designation],
-    'MonthlyIncome': monthly_income
+    "Age": Age,
+    "TypeofContact": TypeofContact,
+    "CityTier": CityTier,
+    "Occupation": Occupation,
+    "Gender": Gender,
+    "NumberOfPersonVisiting": NumberOfPersonVisiting,
+    "PreferredPropertyStar": PreferredPropertyStar,
+    "MaritalStatus": MaritalStatus,
+    "NumberOfTrips": NumberOfTrips,
+    "Passport": 1 if Passport == "Yes" else 0,
+    "OwnCar": 1 if OwnCar == "Yes" else 0,
+    "NumberOfChildrenVisiting": NumberOfChildrenVisiting,
+    "Designation": Designation,
+    "MonthlyIncome": MonthlyIncome,
+    "PitchSatisfactionScore": PitchSatisfactionScore,
+    "ProductPitched": ProductPitched,
+    "NumberOfFollowups": NumberOfFollowups,
+    "DurationOfPitch": DurationOfPitch
 }])
 
-# Predict button
-st.markdown("---")
-if st.button("🔮 Predict Purchase Likelihood", use_container_width=True):
-    if model is not None:
-        try:
-            # Make prediction
-            prediction = model.predict(input_data)[0]
-            prediction_proba = model.predict_proba(input_data)[0]
+# Classification threshold
+classification_threshold = 0.5
 
-            # Display results
-            st.markdown("### 📊 Prediction Results")
+# -----------------------------
+# Prediction
+# -----------------------------
+if st.button("Predict"):
+    prediction_proba = model.predict_proba(input_data)[0, 1]
+    prediction = (prediction_proba >= classification_threshold).astype(int)
 
-            if prediction == 1:
-                st.markdown(
-                    f'<div class="prediction-box success-box">'
-                    f'<h2 style="color: #155724;">✅ High Likelihood of Purchase!</h2>'
-                    f'<p style="font-size: 18px;">This customer is <b>likely to purchase</b> the Wellness Tourism Package.</p>'
-                    f'<p style="font-size: 16px;">Confidence: <b>{prediction_proba[1]*100:.2f}%</b></p>'
-                    f'</div>',
-                    unsafe_allow_html=True
-                )
-                st.success("💡 **Recommendation:** Prioritize follow-up with this customer!")
-            else:
-                st.markdown(
-                    f'<div class="prediction-box warning-box">'
-                    f'<h2 style="color: #856404;">⚠️ Low Likelihood of Purchase</h2>'
-                    f'<p style="font-size: 18px;">This customer is <b>unlikely to purchase</b> the Wellness Tourism Package.</p>'
-                    f'<p style="font-size: 16px;">Confidence: <b>{prediction_proba[0]*100:.2f}%</b></p>'
-                    f'</div>',
-                    unsafe_allow_html=True
-                )
-                st.info("💡 **Recommendation:** Consider alternative packages or additional engagement strategies.")
-
-            # Show probability breakdown
-            col_prob1, col_prob2 = st.columns(2)
-            with col_prob1:
-                st.metric("Probability of No Purchase", f"{prediction_proba[0]*100:.2f}%")
-            with col_prob2:
-                st.metric("Probability of Purchase", f"{prediction_proba[1]*100:.2f}%")
-
-        except Exception as e:
-            st.error(f"Error making prediction: {e}")
+    if prediction == 1:
+        st.success("✅ The customer is likely to purchase the package.")
     else:
-        st.error("Model not loaded. Please check the model repository.")
-
-# Footer
-st.markdown("---")
-st.markdown("""
-<div style='text-align: center; color: #666; padding: 20px;'>
-    <p>🏢 Visit with Us - Wellness Tourism Package Prediction System</p>
-    <p>Built with ❤️ using Streamlit and XGBoost</p>
-</div>
-""", unsafe_allow_html=True)
+        st.error("❌ The customer is unlikely to purchase the package.")
