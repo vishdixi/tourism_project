@@ -2,7 +2,7 @@ from huggingface_hub.utils import RepositoryNotFoundError, HfHubHTTPError
 from huggingface_hub import HfApi, create_repo
 import os
 
-
+# hugging face space information
 repo_id = "vishaldixit75/TourismData"
 repo_type = "dataset"
 
@@ -18,6 +18,7 @@ except RepositoryNotFoundError:
     create_repo(repo_id=repo_id, repo_type=repo_type, private=False)
     print(f"Space '{repo_id}' created.")
 
+# upload files to HF.
 api.upload_folder(
     folder_path="/content/drive/My Drive/tourism_prediction/data",
     repo_id=repo_id,
