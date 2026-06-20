@@ -1,13 +1,13 @@
+#!/usr/bin/env python3
+"""
+Streamlit App for Tourism Package Prediction
+"""
+
 import streamlit as st
 import pandas as pd
-from huggingface_hub import hf_hub_download
-import joblib
-from flask import Flask, render_template, request
-import requests
-import pandas as pd
 import numpy as np
-from sklearn.preprocessing import StandardScaler
-
+import joblib
+from huggingface_hub import hf_hub_download
 
 # Page configuration
 st.set_page_config(
@@ -22,8 +22,8 @@ def load_model():
     """Load the trained model from HuggingFace Hub"""
     try:
         model_path = hf_hub_download(
-            repo_id="vishaldixit75/tourismData",
-            filename="best_tourism_model_v1.joblib"
+            repo_id="abhishek-kumar/tourism-package-prediction-model",
+            filename="best_model.joblib"
         )
         model = joblib.load(model_path)
         return model
@@ -199,3 +199,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+
